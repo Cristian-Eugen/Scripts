@@ -1,0 +1,30 @@
+[dateTime]$oneWeekAgo = (get-date).addDays(-7)
+$Table = Get-EventLog -LogName security -After $oneWeekAgo -InstanceId 4663 | Select-Object -
+Property timegenerated,
+@{n="UserName" ; e = {$_.replacementstrings[1]}},
+@{n="DomainName" ; e = {$_.replacementstrings[2]}},
+@{n="ObjectType" ; e = {$_.replacementstrings[5]}},
+@{n="ObjectPath" ; e = {$_.replacementstrings[6]}},
+@{n="AccessList" ; e = {$_.replacementstrings[9]}}
+$NewTable = Foreach ($Entry in $Table) {
+Switch ($Entry."AccessList") {
+"0x1" {$Entry."AccessList" = "ReadData (or ListDirectory)"}
+"0x2" {$Entry."AccessList" = "WriteData (or AddFile)"}
+"0x4" {$Entry."AccessList" = "AppendData (or AddSubdirectory or CreatePipeInstance)"}
+"0x8" {$Entry."AccessList" = "ReadExtendedFileAtributes"}
+"0x10" {$Entry."AccessList" = "WriteExtendedFileAtributes"}
+"0x20" {$Entry."AccessList" = "Execute/Traverse"}
+"0x40" {$Entry."AccessList" = "DeleteChild"}
+"0x80" {$Entry."AccessList" = "ReadAttributes"}
+"0x100" {$Entry."AccessList" = "WriteAttributes"}
+"0x10000" {$Entry."AccessList" = "DELETE"}
+"0x20000" {$Entry."AccessList" = "READ_CONTROL"}
+"0x40000" {$Entry."AccessList" = "WRITE_DAC"}
+"0x80000" {$Entry."AccessList" = "WRITE_OWNER"}
+"0x100000" {$Entry."AccessList" = "SYNCHRONIZE"}
+"0x1000000" {$Entry."AccessList" = "ACCESS_SYS_SEC"}
+}
+$Entry
+}
+$NewTable | ? ObjectType -like *File* | Export-Csv c:\Audit_File_System_4663_log_"$((Get-
+Date).ToString("yyyyMMdd_HHmm"))".csv -NoTypeInformation
