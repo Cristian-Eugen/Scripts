@@ -1,0 +1,9 @@
+cls
+$Workstation = Read-Host "Please enter Workstation NAME or IP to connect remote"
+$Table = Query session /server:$Workstation 
+$SessionID = $Table.Trim() -replace '\s{2,}', ',' | ConvertFrom-Csv | where SESSIONNAME -eq console | Select ID
+Foreach ($row in $SessionID){ 
+$ID=$row.ID
+}
+$ID
+mstsc.exe /v $Workstation /Shadow:$ID /control
